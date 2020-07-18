@@ -43,31 +43,55 @@ The trajectory of a particle in a transverse EM wave and in a circularly polariz
 
 <img src="sensitivityplots.PNG" width="800">
 
-The code snippet below generates the left of the two plots (`doubleplanewavemotion` is a set of differential equations written by me, and everything else is part of the Wolfram language). This highlights the ability of the Wolfram language to generate complex plots with short, very dense code, due among other things to built in iterators (`Table[ ]` and various replacement and mapping operators (`/.`, `->`, and `@`)
+The code snippet below generates the left of the two plots. This highlights the ability of the Wolfram language to generate complex plots with short, very dense code, due among other things to built in iterators (`Table[ ]` and various replacement and mapping operators (`/.`, `->`, and `@`)
 
 ```Mathematica
+(*generates a set of coupled differential equations, x[t], y[t], and z[t]*)
+doubleplanewavemotion = 
+  Module[
+   {c = 1, E1, B1, E2, B2,
+    r = {x[t], y[t], z[t]},
+    \[Gamma] = (1 - (x'[t]^2 + y'[t]^2 + z'[t]^2)/c^2)^(-1/2),
+    v = {x'[t], y'[t], z'[t]},
+    k1 = {0, 0, 1},
+    k2 = {0, 1, 0}},
+   \[Gamma] = (1 - v.v/c^2)^(-1/2);
+   p = \[Gamma] m0 v;
+   E1 = {E0 Sin[k1.r - c t], 0, 0};
+   B1 = {0, B0 Sin[k1.r - c t], 0};
+   E2 = {0, 0, E0 Sin[k2.r - c t]};
+   B2 = {B0 Sin[k2.r - c t], 0, 0};
+   First@Solve[
+       D[p, t] == q (E1 + E2 + Cross[v, B1 + B2]), {x''[t], y''[t], 
+        z''[t]}] /. Rule -> Equal // Simplify
+   ];
+ 
+(*integrates equations for a set of initial conditions, iterating over 4 initial velocities*)
 Tmax = 18;
 dmvmtrchaos =
-  Table[NDSolveValue[
-    Join[doubleplanewavemotion /. {m0 -> 0.1, q -> 1.4, E0 -> 0.021, 
-       B0 -> 0.9},
-     {x[0] == 0, y[0] == 0, z[0] == 0, x'[0] == 0, y'[0] == 0, 
-      z'[0] == 0.8 + i}],
-    {x, y, z}, {t, 0, Tmax}, 
-    MaxSteps -> Infinity], {i, {0, 0.0001, 0.001, 0.01}}];
+  Table[
+    NDSolveValue[
+      Join[doubleplanewavemotion /. {m0 -> 0.1, q -> 1.4, E0 -> 0.021, B0 -> 0.9},
+       {x[0] == 0, y[0] == 0, z[0] == 0, x'[0] == 0, y'[0] == 0, z'[0] == 0.8 + i}],
+      {x, y, z}, {t, 0, Tmax}, 
+      MaxSteps -> Infinity], 
+    {i, {0, 0.0001, 0.001, 0.01}}
+  ];
 
+(*shows start and end points for each particle, the trajectories from above in a range of colors, and a legend*)
 Show[
  Graphics3D[{Orange, PointSize -> .05, Point[{0, 0, 0}],
    PointSize -> Large, Black, 
    Table[Point[Through@dmvmtrchaos[[i]][Tmax]], {i, 1, 4}]}],
  ParametricPlot3D[
-  Evaluate[Table[Through@dmvmtrchaos[[i]][t], {i, 1, 4}]], {t, 0, 
-   Tmax},
+  Evaluate[Table[Through@dmvmtrchaos[[i]][t], {i, 1, 4}]], {t, 0, Tmax},
   PlotRange -> All, PlotPoints -> 400, 
   PlotStyle -> Table[Hue[0.9 - i/10., 0.62, 0.68], {i, 1, 4}],
   PlotLegends -> 
-   Table["v = " <> ToString[0.8 + i] <> 
-     "c", {i, {0, 0.0001, 0.001, 0.01}}]]]
+   Table["v = " <> ToString[0.8 + i] <> "c", 
+   {i, {0, 0.0001, 0.001, 0.01}}]
+  ]
+]
 ```
 
 The Wolfram language is a powerful tool for computations requiring powerful differential equation solver methods such as the three above. As a multi-paradigm language, coding in the Wolfram language requires a very flexible understanding of the fundamentals of programming, making this project excellent for the mathematically-oriented amateur.
