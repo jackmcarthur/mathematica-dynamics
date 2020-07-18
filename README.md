@@ -12,7 +12,7 @@ Deriving the equations of motion of a double pendulum is a classic problem in La
 ![double pendulum](doublependulum.gif)
 
 ## Relativistic and nonrelativistic particle dynamics in electromagnetic fields
-Models of particle motion in electromagnetic fields are commonly used in particle physics and plasma physics, as electromagnetic (EM) fields are the most useful tool for trapping or accelerating charged particles. At low particle velocities, the equations governing the trajectory of a charged particle in an EM field can be solved using standard methods from Newtonian physics, but at extreme speeds, those close to the speed of light _c_, the effects of Albert Einstein's theory of relativity warp particle trajectories in ways that cannot be explained by Newtonian physics. 
+Models of particle motion in electromagnetic fields are commonly used in particle physics and plasma physics, as electromagnetic (EM) fields are the most useful tool for trapping or accelerating charged particles.<sup id="a1">[1](#f1)</sup> At low particle velocities, the equations governing the trajectory of a charged particle in an EM field can be solved using standard methods from Newtonian physics, but at extreme speeds, those close to the speed of light _c_, the effects of Albert Einstein's theory of relativity warp particle trajectories in ways that cannot be explained by Newtonian physics. 
 
 Nonrelativistic (Newtonian) models still have their place in modern physics in low-velocity cases, as they greatly simplify calculations, but at higher velocities, the more complex relativistic models are necessary for accurate calculations. In this project, numerical solvers in Mathematica were used to study the trajectories of charged particles in electromagnetic wave systems, and comparisons between nonrelativistic and relativistic predictions were made.
 
@@ -24,8 +24,9 @@ The trajectory of a particle in a transverse electromagnetic wave (projected ont
 
 These periodic plots provide better intuition as to how the particles accelerate in a transverse EM wave, and below, they're used to contrast nonrelativistic motion (top) with relativistic motion (bottom). This plot makes obvious how the nonrelativistic treatment is similar to the relativistic one at low fractions of the speed of light _c_, but it becomes more and more inaccurate as the velocity approaches _c_.
 
-A taste of scripting in Mathematica (the function comparisons[] was written by me, all other syntax is native to the Wolfram language):
-```
+A taste of scripting in Mathematica (the function `comparisons[ ]` was written by me, all other syntax is native to the Wolfram language):
+
+```Mathematica
 Grid[Transpose[
   Table[Join[{Style["v = " <> ToString[v] <> "c", FontSize -> 14, 
       FontWeight -> Bold]},
@@ -38,9 +39,41 @@ Grid[Transpose[
 <img src="rel-vs-nonrel.png" width="800">
 
 ### Sensitivity to initial conditions
-The trajectory of a particle in a transverse EM wave and in a circularly polarized EM wave are periodic and therefore predictable; however, published simulations of the trajectory of a particle in two perpendicular (crossed) transverse EM waves reported the motion to be chaotic.<sup id="a1">[1](#f1)</sup> Both crossed transverse and circularly polarized EM waves showed extreme sensitivity to initial conditions in this project, and a simulation of several identical particles with slightly different initial velocities can be seen below:
+The trajectory of a particle in a transverse EM wave and in a circularly polarized EM wave are periodic and therefore predictable; however, published simulations of the trajectory of a particle in two perpendicular (crossed) transverse EM waves reported the motion to be chaotic.<sup id="a2">[2](#f2)</sup> In this project, I repeated simulations of both crossed transverse and circularly polarized EM waves, and both showed extreme sensitivity to initial conditions, confirming the literature result. 3D trajectory plots for several particles, identical besides their slightly different initial velocities, can be seen below (transverse waves at left, circularly polarized at right). 
 
-<img src="sensitivityplots.png" width="800">
+<img src="sensitivityplots.PNG" width="800">
 
+The code snippet below generates the left of the two plots (`doubleplanewavemotion` is a set of differential equations written by me, and everything else is part of the Wolfram language). This highlights the ability of the Wolfram language to generate complex plots with short, very dense code, due among other things to built in iterators (`Table[ ]` and various replacement and mapping operators (`/.`, `->`, and `@`)
 
-<b id="f1">1.</b>Krlín, L., et al. “Role of Finite Larmor Radius in Chaotic Regime of Waves-Particle Interaction.” Czechoslovak Journal of Physics, vol. 54, no. 7, 2004, pp. 759–774., doi:10.1023/b:cjop.0000038529.45640.10. [↩](#a1)
+```Mathematica
+Tmax = 18;
+dmvmtrchaos =
+  Table[NDSolveValue[
+    Join[doubleplanewavemotion /. {m0 -> 0.1, q -> 1.4, E0 -> 0.021, 
+       B0 -> 0.9},
+     {x[0] == 0, y[0] == 0, z[0] == 0, x'[0] == 0, y'[0] == 0, 
+      z'[0] == 0.8 + i}],
+    {x, y, z}, {t, 0, Tmax}, 
+    MaxSteps -> Infinity], {i, {0, 0.0001, 0.001, 0.01}}];
+
+Show[
+ Graphics3D[{Orange, PointSize -> .05, Point[{0, 0, 0}],
+   PointSize -> Large, Black, 
+   Table[Point[Through@dmvmtrchaos[[i]][Tmax]], {i, 1, 4}]}],
+ ParametricPlot3D[
+  Evaluate[Table[Through@dmvmtrchaos[[i]][t], {i, 1, 4}]], {t, 0, 
+   Tmax},
+  PlotRange -> All, PlotPoints -> 400, 
+  PlotStyle -> Table[Hue[0.9 - i/10., 0.62, 0.68], {i, 1, 4}],
+  PlotLegends -> 
+   Table["v = " <> ToString[0.8 + i] <> 
+     "c", {i, {0, 0.0001, 0.001, 0.01}}]]]
+```
+
+The Wolfram language is a powerful tool for computations requiring powerful differential equation solver methods such as the three above. As a multi-paradigm language, coding in the Wolfram language requires a very flexible understanding of the fundamentals of programming, making this project excellent for the mathematically-oriented amateur.
+
+### References
+
+<b id="f1">1. </b>“Chapter 1.” Introduction to Plasma Dynamics, by A. I. Morozov, Taylor & Francis, 2013, pp. 1–20. [↩](#a1)
+
+<b id="f2">2. </b>Krlín, L., et al. “Role of Finite Larmor Radius in Chaotic Regime of Waves-Particle Interaction.” Czechoslovak Journal of Physics, vol. 54, no. 7, 2004, pp. 759–774., doi:10.1023/b:cjop.0000038529.45640.10. [↩](#a2)
